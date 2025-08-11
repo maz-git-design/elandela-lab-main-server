@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
 import { Model } from 'mongoose';
 import { AcademicYear, AcademicYearDocument } from './academicYear.schema';
+import { CreateAcademicYearDto } from './academicYear.dto';
 
 @Injectable()
 export class AcademicYearService {
@@ -11,11 +14,11 @@ export class AcademicYearService {
   ) {}
 
   async create(
-    data: Partial<AcademicYear>,
+    createAcademicYearDto: CreateAcademicYearDto,
     userId?: string,
   ): Promise<AcademicYear> {
-    // Optionally use userId for audit/history
-    return this.academicYearModel.create(data);
+    await validateOrReject(createAcademicYearDto);
+    return this.academicYearModel.create(createAcademicYearDto);
   }
 
   async findAll(): Promise<AcademicYear[]> {
@@ -35,9 +38,35 @@ export class AcademicYearService {
     data: Partial<AcademicYear>,
     userId?: string,
   ): Promise<AcademicYear> {
+    const dto = plainToInstance(CreateAcademicYearDto, data);
+    await validateOrReject(dto);
     return this.academicYearModel
       .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
       .exec();
+  }
+
+  async partialUpdate(
+    id: string,
+    data: Partial<AcademicYear>,
+    userId?: string,
+  ): Promise<AcademicYear> {
+    const dto = plainToInstance(CreateAcademicYearDto, data);
+    await validateOrReject(dto);
+    const updateData: Partial<AcademicYear> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.academicYearModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
+      .exec();
+    if (!updated) throw new NotFoundException('AcademicYear not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

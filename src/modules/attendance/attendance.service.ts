@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Attendance, AttendanceDocument } from './attendance.schema';
+import { CreateAttendanceDto } from './attendance.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { UpdateAttendanceDto } from './update-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -11,12 +15,11 @@ export class AttendanceService {
   ) {}
 
   async create(
-    data: Partial<Attendance>,
+    createAttendanceDto: CreateAttendanceDto,
     userId?: string,
   ): Promise<Attendance> {
-    // Optionally use userId for audit/history, e.g. log who created
-    // Example: await this.auditService.logCreate('Attendance', userId, data);
-    return this.attendanceModel.create(data);
+    await validateOrReject(createAttendanceDto);
+    return this.attendanceModel.create(createAttendanceDto);
   }
 
   async findAll(): Promise<Attendance[]> {
@@ -33,13 +36,39 @@ export class AttendanceService {
 
   async update(
     id: string,
+    updateAttendanceDto: UpdateAttendanceDto,
+    userId?: string,
+  ): Promise<Attendance> {
+    await validateOrReject(updateAttendanceDto);
+    return this.attendanceModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateAttendanceDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Attendance>,
     userId?: string,
   ): Promise<Attendance> {
-    // Optionally use userId for audit/history
-    return this.attendanceModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreateAttendanceDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Attendance> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.attendanceModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Attendance not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

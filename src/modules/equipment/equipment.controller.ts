@@ -14,6 +14,7 @@ import {
 import { EquipmentService } from './equipment.service';
 import { Equipment } from './equipment.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateEquipmentDto } from './equipment.dto';
 
 @Controller('equipments')
 export class EquipmentController {
@@ -22,9 +23,9 @@ export class EquipmentController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'equipment', action: 'Create' }])
-  create(@Body() data: Partial<Equipment>, @Request() req) {
+  create(@Body() createEquipmentDto: CreateEquipmentDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.equipmentService.create(data, userId);
+    return this.equipmentService.create(createEquipmentDto, userId);
   }
 
   @Get()

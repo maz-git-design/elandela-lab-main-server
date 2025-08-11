@@ -1,0 +1,64 @@
+### Get Users
+GET http://localhost:3000/users
+
+### Get User by ID
+GET http://localhost:3000/users/6899c524c2fbb5a9bab52883
+
+### Create User
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+
+### Update User
+PUT http://localhost:3000/users/{{userId}}
+Content-Type: application/json
+
+{
+  "name": "Jane Doe"
+}
+
+### Partial Update User
+PATCH http://localhost:3000/users/{{userId}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+### Soft Delete User
+DELETE http://localhost:3000/users/{{userId}}
+
+### Restore User
+PUT http://localhost:3000/users/restore/{{userId}}
+
+### Change User Status
+PATCH http://localhost:3000/users/{{userId}}/status
+Content-Type: application/json
+
+{
+  "status": "inactive"
+}
+
+### Reset User Password
+PATCH http://localhost:3000/users/{{userId}}/reset-password
+Content-Type: application/json
+
+{
+  "newPassword": "newpassword123"
+}
+
+### Filter Users
+POST http://localhost:3000/users/filter
+Content-Type: application/json
+
+{
+  "status": "active",
+  "fromDate": "2025-01-01",
+  "toDate": "2025-12-31"
+}

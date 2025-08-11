@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Reservation, ReservationDocument } from './reservation.schema';
+import { CreateReservationDto } from './reservation.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { UpdateReservationDto } from './update-reservation.dto';
 
 @Injectable()
 export class ReservationService {
@@ -11,11 +15,11 @@ export class ReservationService {
   ) {}
 
   async create(
-    data: Partial<Reservation>,
+    createReservationDto: CreateReservationDto,
     userId?: string,
   ): Promise<Reservation> {
-    // Optionally use userId for audit/history
-    return this.reservationModel.create(data);
+    await validateOrReject(createReservationDto);
+    return this.reservationModel.create(createReservationDto);
   }
 
   async findAll(): Promise<Reservation[]> {
@@ -32,11 +36,14 @@ export class ReservationService {
 
   async update(
     id: string,
-    data: Partial<Reservation>,
+    updateReservationDto: UpdateReservationDto,
     userId?: string,
   ): Promise<Reservation> {
+    await validateOrReject(updateReservationDto);
     return this.reservationModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateReservationDto, {
+        new: true,
+      })
       .exec();
   }
 
@@ -45,8 +52,8 @@ export class ReservationService {
     data: Partial<Reservation>,
     userId?: string,
   ): Promise<Reservation> {
-    // Optionally use userId for audit/history
-    // Only update provided fields, do not overwrite with undefined
+    const dto = plainToInstance(CreateReservationDto, data);
+    await validateOrReject(dto as object);
     const updateData: Partial<Reservation> = {};
     for (const key in data) {
       if (data[key] !== undefined) {

@@ -14,6 +14,8 @@ import {
 import { LabService } from './lab.service';
 import { Lab } from './lab.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateLabDto } from './lab.dto';
+import { UpdateLabDto } from './update-lab.dto';
 
 @Controller('labs')
 export class LabController {
@@ -22,9 +24,9 @@ export class LabController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'lab', action: 'Create' }])
-  create(@Body() data: Partial<Lab>, @Request() req) {
+  create(@Body() createLabDto: CreateLabDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.labService.create(data, userId);
+    return this.labService.create(createLabDto, userId);
   }
 
   @Get()
@@ -44,9 +46,13 @@ export class LabController {
   @Put(':id')
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'lab', action: 'Update' }])
-  update(@Param('id') id: string, @Body() data: Partial<Lab>, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateLabDto: UpdateLabDto,
+    @Request() req,
+  ) {
     const userId = req.user?._id || req.user?.id;
-    return this.labService.update(id, data, userId);
+    return this.labService.update(id, updateLabDto, userId);
   }
 
   @Patch(':id')

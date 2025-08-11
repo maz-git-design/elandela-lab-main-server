@@ -2,14 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Lab, LabDocument } from './lab.schema';
+import { CreateLabDto } from './lab.dto';
+import { UpdateLabDto } from './update-lab.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class LabService {
   constructor(@InjectModel(Lab.name) readonly labModel: Model<LabDocument>) {}
 
-  async create(data: Partial<Lab>, userId?: string): Promise<Lab> {
-    // Optionally use userId for audit/history
-    return this.labModel.create(data);
+  async create(createLabDto: CreateLabDto, userId?: string): Promise<Lab> {
+    await validateOrReject(createLabDto);
+    return this.labModel.create(createLabDto);
   }
 
   async findAll(): Promise<Lab[]> {
@@ -24,10 +28,41 @@ export class LabService {
     return lab;
   }
 
-  async update(id: string, data: Partial<Lab>, userId?: string): Promise<Lab> {
+  async update(
+    id: string,
+    updateLabDto: UpdateLabDto,
+    userId?: string,
+  ): Promise<Lab> {
+    await validateOrReject(updateLabDto);
     return this.labModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateLabDto, {
+        new: true,
+      })
       .exec();
+  }
+
+  async partialUpdate(
+    id: string,
+    data: Partial<Lab>,
+    userId?: string,
+  ): Promise<Lab> {
+    const dto = plainToInstance(CreateLabDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Lab> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.labModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
+      .exec();
+    if (!updated) throw new NotFoundException('Lab not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

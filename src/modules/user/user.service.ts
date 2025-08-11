@@ -3,6 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import * as bcrypt from 'bcryptjs';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CreateUserDto } from './dto/user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -37,14 +41,15 @@ export class UserService {
     return { user, defaultPassword };
   }
 
-  async create(data: Partial<User>, userId?: string): Promise<User> {
-    // Optionally use userId for audit/history
-    if (!data.password) {
-      data.password = await bcrypt.hash('ChangeMe123!', 10);
+  async create(createUserDto: CreateUserDto, userId?: string): Promise<User> {
+    // Validate input using DTO
+
+    if (!createUserDto.password) {
+      createUserDto.password = await bcrypt.hash('ChangeMe123!', 10);
     } else {
-      data.password = await bcrypt.hash(data.password, 10);
+      createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
     }
-    return this.userModel.create(data);
+    return this.userModel.create(createUserDto);
   }
 
   async findAll(filter: any = {}): Promise<User[]> {
@@ -65,12 +70,40 @@ export class UserService {
 
   async update(
     id: string,
+    updateUserDto: UpdateUserDto,
+    userId?: string,
+  ): Promise<User> {
+    await validateOrReject(updateUserDto);
+    return this.userModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateUserDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<User>,
     userId?: string,
   ): Promise<User> {
-    return this.userModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    // Validate input using DTO
+    const dto = plainToInstance(CreateUserDto, data);
+    await validateOrReject(dto);
+    const updateData: Partial<User> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.userModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('User not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

@@ -6,6 +6,10 @@ import {
   Permission,
   PermissionDocument,
 } from '../permission/permission.schema';
+import { CreateModuleDto } from './module.dto';
+import { UpdateModuleDto } from './update-module.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class ModuleService {
@@ -15,11 +19,18 @@ export class ModuleService {
     readonly permissionModel: Model<PermissionDocument>,
   ) {}
 
-  async create(data: Partial<Module>, userId: string): Promise<Module> {
-    const moduleDoc = await this.moduleModel.create(data);
-    // Create permissions for each action
-    if (data.availableActions && Array.isArray(data.availableActions)) {
-      for (const action of data.availableActions) {
+  async create(
+    createModuleDto: CreateModuleDto,
+    userId?: string,
+  ): Promise<Module> {
+    await validateOrReject(createModuleDto);
+    // Permission creation logic remains
+    const moduleDoc = await this.moduleModel.create(createModuleDto);
+    if (
+      createModuleDto.availableActions &&
+      Array.isArray(createModuleDto.availableActions)
+    ) {
+      for (const action of createModuleDto.availableActions) {
         const permissionName = `${action}_${moduleDoc.name}`;
         await this.permissionModel.create({
           name: permissionName,
@@ -47,14 +58,39 @@ export class ModuleService {
 
   async update(
     id: string,
+    updateModuleDto: UpdateModuleDto,
+    userId?: string,
+  ): Promise<Module> {
+    await validateOrReject(updateModuleDto);
+    return this.moduleModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateModuleDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Module>,
     userId?: string,
   ): Promise<Module> {
-    // Optionally use userId for audit/history, e.g. log who updated
-    // Example: await this.auditService.logUpdate('Module', id, userId, data);
-    return this.moduleModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreateModuleDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Module> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.moduleModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Module not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

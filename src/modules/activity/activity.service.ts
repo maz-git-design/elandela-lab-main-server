@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Activity, ActivityDocument } from './activity.schema';
+import { CreateActivityDto } from './activity.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { UpdateActivityDto } from './update-activity.dto';
 
 @Injectable()
 export class ActivityService {
@@ -9,9 +13,12 @@ export class ActivityService {
     @InjectModel(Activity.name) readonly activityModel: Model<ActivityDocument>,
   ) {}
 
-  async create(data: Partial<Activity>, userId?: string): Promise<Activity> {
-    // Optionally use userId for audit/history
-    return this.activityModel.create(data);
+  async create(
+    createActivityDto: CreateActivityDto,
+    userId?: string,
+  ): Promise<Activity> {
+    await validateOrReject(createActivityDto);
+    return this.activityModel.create(createActivityDto);
   }
 
   async findAll(): Promise<Activity[]> {
@@ -28,12 +35,39 @@ export class ActivityService {
 
   async update(
     id: string,
+    updateActivityDto: UpdateActivityDto,
+    userId?: string,
+  ): Promise<Activity> {
+    await validateOrReject(updateActivityDto);
+    return this.activityModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateActivityDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Activity>,
     userId?: string,
   ): Promise<Activity> {
-    return this.activityModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreateActivityDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Activity> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.activityModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Activity not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

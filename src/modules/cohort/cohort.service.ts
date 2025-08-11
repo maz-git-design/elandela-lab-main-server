@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cohort, CohortDocument } from './cohort.schema';
+import { CreateCohortDto } from './cohort.dto';
+import { UpdateCohortDto } from './update-cohort.dto';
+import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
 
 @Injectable()
 export class CohortService {
@@ -9,9 +13,12 @@ export class CohortService {
     @InjectModel(Cohort.name) readonly cohortModel: Model<CohortDocument>,
   ) {}
 
-  async create(data: Partial<Cohort>, userId?: string): Promise<Cohort> {
-    // Optionally use userId for audit/history
-    return this.cohortModel.create(data);
+  async create(
+    createCohortDto: CreateCohortDto,
+    userId?: string,
+  ): Promise<Cohort> {
+    await validateOrReject(createCohortDto);
+    return this.cohortModel.create(createCohortDto);
   }
 
   async findAll(): Promise<Cohort[]> {
@@ -28,12 +35,39 @@ export class CohortService {
 
   async update(
     id: string,
+    updateCohortDto: UpdateCohortDto,
+    userId?: string,
+  ): Promise<Cohort> {
+    await validateOrReject(updateCohortDto);
+    return this.cohortModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateCohortDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Cohort>,
     userId?: string,
   ): Promise<Cohort> {
-    return this.cohortModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreateCohortDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Cohort> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.cohortModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Cohort not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

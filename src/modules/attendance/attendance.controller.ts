@@ -14,6 +14,8 @@ import {
 import { AttendanceService } from './attendance.service';
 import { Attendance } from './attendance.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateAttendanceDto } from './attendance.dto';
+import { UpdateAttendanceDto } from './update-attendance.dto';
 
 @Controller('attendances')
 export class AttendanceController {
@@ -22,9 +24,9 @@ export class AttendanceController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'attendance', action: 'Create' }])
-  create(@Body() data: Partial<Attendance>, @Request() req) {
+  create(@Body() createAttendanceDto: CreateAttendanceDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.attendanceService.create(data, userId);
+    return this.attendanceService.create(createAttendanceDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class AttendanceController {
   @SetMetadata('permissions', [{ module: 'attendance', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Attendance>,
+    @Body() updateAttendanceDto: UpdateAttendanceDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.attendanceService.update(id, data, userId);
+    return this.attendanceService.update(id, updateAttendanceDto, userId);
   }
 
   @Patch(':id')

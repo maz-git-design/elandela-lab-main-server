@@ -2,6 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Equipment, EquipmentDocument } from './equipment.schema';
+import { CreateEquipmentDto } from './equipment.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class EquipmentService {
@@ -10,9 +13,12 @@ export class EquipmentService {
     readonly equipmentModel: Model<EquipmentDocument>,
   ) {}
 
-  async create(data: Partial<Equipment>, userId?: string): Promise<Equipment> {
-    // Optionally use userId for audit/history
-    return this.equipmentModel.create(data);
+  async create(
+    createEquipmentDto: CreateEquipmentDto,
+    userId?: string,
+  ): Promise<Equipment> {
+    await validateOrReject(createEquipmentDto);
+    return this.equipmentModel.create(createEquipmentDto);
   }
 
   async findAll(): Promise<Equipment[]> {
@@ -32,6 +38,8 @@ export class EquipmentService {
     data: Partial<Equipment>,
     userId?: string,
   ): Promise<Equipment> {
+    const dto = plainToInstance(CreateEquipmentDto, data);
+    await validateOrReject(dto as object);
     return this.equipmentModel
       .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
       .exec();
@@ -42,19 +50,21 @@ export class EquipmentService {
     data: Partial<Equipment>,
     userId?: string,
   ): Promise<Equipment> {
-    // Optionally use userId for audit/history
-    // Only update provided fields, do not overwrite with undefined
+    const dto = plainToInstance(CreateEquipmentDto, data);
+    await validateOrReject(dto as object);
     const updateData: Partial<Equipment> = {};
     for (const key in data) {
       if (data[key] !== undefined) {
         updateData[key] = data[key];
       }
     }
-    const updated = await this.equipmentModel.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      { $set: updateData },
-      { new: true },
-    ).exec();
+    const updated = await this.equipmentModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
+      .exec();
     if (!updated) throw new NotFoundException('Equipment not found');
     return updated;
   }

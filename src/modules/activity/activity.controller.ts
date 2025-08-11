@@ -14,6 +14,8 @@ import {
 import { ActivityService } from './activity.service';
 import { Activity } from './activity.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateActivityDto } from './activity.dto';
+import { UpdateActivityDto } from './update-activity.dto';
 
 @Controller('activities')
 export class ActivityController {
@@ -22,9 +24,9 @@ export class ActivityController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'activity', action: 'Create' }])
-  create(@Body() data: Partial<Activity>, @Request() req) {
+  create(@Body() createActivityDto: CreateActivityDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.activityService.create(data, userId);
+    return this.activityService.create(createActivityDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class ActivityController {
   @SetMetadata('permissions', [{ module: 'activity', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Activity>,
+    @Body() updateActivityDto: UpdateActivityDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.activityService.update(id, data, userId);
+    return this.activityService.update(id, updateActivityDto, userId);
   }
 
   @Patch(':id')

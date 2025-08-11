@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permission, PermissionDocument } from './permission.schema';
+import { CreatePermissionDto } from './permission.dto';
+import { UpdatePermissionDto } from './update-permission.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class PermissionService {
@@ -11,11 +15,11 @@ export class PermissionService {
   ) {}
 
   async create(
-    data: Partial<Permission>,
+    createPermissionDto: CreatePermissionDto,
     userId?: string,
   ): Promise<Permission> {
-    // Optionally use userId for audit/history
-    return this.permissionModel.create(data);
+    await validateOrReject(createPermissionDto);
+    return this.permissionModel.create(createPermissionDto);
   }
 
   async findAll(): Promise<Permission[]> {
@@ -32,12 +36,39 @@ export class PermissionService {
 
   async update(
     id: string,
+    updatePermissionDto: UpdatePermissionDto,
+    userId?: string,
+  ): Promise<Permission> {
+    await validateOrReject(updatePermissionDto);
+    return this.permissionModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updatePermissionDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Permission>,
     userId?: string,
   ): Promise<Permission> {
-    return this.permissionModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreatePermissionDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Permission> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.permissionModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Permission not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

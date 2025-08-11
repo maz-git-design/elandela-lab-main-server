@@ -10,33 +10,47 @@ import {
   Request,
   UseGuards,
   SetMetadata,
+  ClassSerializerInterceptor,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateUserDto } from './dto/user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
+import {
+  Serialize,
+  SerializeInterceptor,
+} from 'src/interceptors/serialize.interceptor';
 
 @Controller('users')
+//@UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  @UseGuards(RolesActionsGuard)
-  @SetMetadata('permissions', [{ module: 'user', action: 'Create' }])
-  create(@Body() data: Partial<User>, @Request() req) {
+  // @UseGuards(RolesActionsGuard)
+  // @SetMetadata('permissions', [{ module: 'user', action: 'Create' }])
+  create(@Body() createUserDto: CreateUserDto, @Request() req) {
+    console.log('Creating user with data:', createUserDto);
     const userId = req.user?._id || req.user?.id;
-    return this.userService.create(data, userId);
+    return this.userService.create(createUserDto, userId);
   }
 
   @Get()
-  @UseGuards(RolesActionsGuard)
-  @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
+  // @UseGuards(RolesActionsGuard)
+  // @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
+  //@UseInterceptors(ClassSerializerInterceptor)
   findAll(@Body('filter') filter?: any) {
     return this.userService.findAll(filter);
   }
 
   @Get(':id')
-  @UseGuards(RolesActionsGuard)
-  @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
+  // @UseGuards(RolesActionsGuard)
+  // @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
+  //@UseInterceptors(new SerializeInterceptor(UserResponseDto))
+  @Serialize(UserResponseDto)
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
   }
@@ -44,9 +58,13 @@ export class UserController {
   @Put(':id')
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'user', action: 'ChangeStatus' }])
-  update(@Param('id') id: string, @Body() data: Partial<User>, @Request() req) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
     const userId = req.user?._id || req.user?.id;
-    return this.userService.update(id, data, userId);
+    return this.userService.update(id, updateUserDto, userId);
   }
 
   @Delete(':id')

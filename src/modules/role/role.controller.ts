@@ -14,6 +14,7 @@ import {
 import { RoleService } from './role.service';
 import { Role } from './role.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateRoleDto } from './role.dto';
 
 @Controller('roles')
 export class RoleController {
@@ -22,9 +23,9 @@ export class RoleController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'role', action: 'Create' }])
-  create(@Body() data: Partial<Role>, @Request() req) {
+  create(@Body() createRoleDto: CreateRoleDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.roleService.create(data, userId);
+    return this.roleService.create(createRoleDto, userId);
   }
 
   @Get()

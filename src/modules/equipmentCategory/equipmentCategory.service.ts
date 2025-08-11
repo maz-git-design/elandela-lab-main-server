@@ -5,6 +5,9 @@ import {
   EquipmentCategory,
   EquipmentCategoryDocument,
 } from './equipmentCategory.schema';
+import { CreateEquipmentCategoryDto } from './equipmentCategory.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class EquipmentCategoryService {
@@ -14,11 +17,11 @@ export class EquipmentCategoryService {
   ) {}
 
   async create(
-    data: Partial<EquipmentCategory>,
+    createEquipmentCategoryDto: CreateEquipmentCategoryDto,
     userId?: string,
   ): Promise<EquipmentCategory> {
-    // Optionally use userId for audit/history
-    return this.equipmentCategoryModel.create(data);
+    await validateOrReject(createEquipmentCategoryDto);
+    return this.equipmentCategoryModel.create(createEquipmentCategoryDto);
   }
 
   async findAll(): Promise<EquipmentCategory[]> {
@@ -38,9 +41,35 @@ export class EquipmentCategoryService {
     data: Partial<EquipmentCategory>,
     userId?: string,
   ): Promise<EquipmentCategory> {
+    const dto = plainToInstance(CreateEquipmentCategoryDto, data);
+    await validateOrReject(dto as object);
     return this.equipmentCategoryModel
       .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
       .exec();
+  }
+
+  async partialUpdate(
+    id: string,
+    data: Partial<EquipmentCategory>,
+    userId?: string,
+  ): Promise<EquipmentCategory> {
+    const dto = plainToInstance(CreateEquipmentCategoryDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<EquipmentCategory> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.equipmentCategoryModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
+      .exec();
+    if (!updated) throw new NotFoundException('EquipmentCategory not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

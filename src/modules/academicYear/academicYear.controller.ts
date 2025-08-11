@@ -14,6 +14,7 @@ import {
 import { AcademicYearService } from './academicYear.service';
 import { AcademicYear } from './academicYear.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateAcademicYearDto } from './academicYear.dto';
 
 @Controller('academic-years')
 export class AcademicYearController {
@@ -22,9 +23,9 @@ export class AcademicYearController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'academicYear', action: 'Create' }])
-  create(@Body() data: Partial<AcademicYear>, @Request() req) {
+  create(@Body() createAcademicYearDto: CreateAcademicYearDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.academicYearService.create(data, userId);
+    return this.academicYearService.create(createAcademicYearDto, userId);
   }
 
   @Get()

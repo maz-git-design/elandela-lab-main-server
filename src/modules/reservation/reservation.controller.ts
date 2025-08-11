@@ -14,6 +14,8 @@ import {
 import { ReservationService } from './reservation.service';
 import { Reservation } from './reservation.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateReservationDto } from './reservation.dto';
+import { UpdateReservationDto } from './update-reservation.dto';
 
 @Controller('reservations')
 export class ReservationController {
@@ -22,9 +24,9 @@ export class ReservationController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'reservation', action: 'Create' }])
-  create(@Body() data: Partial<Reservation>, @Request() req) {
+  create(@Body() createReservationDto: CreateReservationDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.reservationService.create(data, userId);
+    return this.reservationService.create(createReservationDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class ReservationController {
   @SetMetadata('permissions', [{ module: 'reservation', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Reservation>,
+    @Body() updateReservationDto: UpdateReservationDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.reservationService.update(id, data, userId);
+    return this.reservationService.update(id, updateReservationDto, userId);
   }
 
   @Patch(':id')

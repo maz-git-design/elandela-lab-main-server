@@ -2,6 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Role, RoleDocument } from './role.schema';
+import { CreateRoleDto } from './role.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class RoleService {
@@ -9,9 +12,9 @@ export class RoleService {
     @InjectModel(Role.name) readonly roleModel: Model<RoleDocument>,
   ) {}
 
-  async create(data: Partial<Role>, userId?: string): Promise<Role> {
-    // Optionally use userId for audit/history
-    return this.roleModel.create(data);
+  async create(createRoleDto: CreateRoleDto, userId?: string): Promise<Role> {
+    await validateOrReject(createRoleDto);
+    return this.roleModel.create(createRoleDto);
   }
 
   async findAll(): Promise<Role[]> {
@@ -31,9 +34,35 @@ export class RoleService {
     data: Partial<Role>,
     userId?: string,
   ): Promise<Role> {
+    const dto = plainToInstance(CreateRoleDto, data);
+    await validateOrReject(dto as object);
     return this.roleModel
       .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
       .exec();
+  }
+
+  async partialUpdate(
+    id: string,
+    data: Partial<Role>,
+    userId?: string,
+  ): Promise<Role> {
+    const dto = plainToInstance(CreateRoleDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Role> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.roleModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
+      .exec();
+    if (!updated) throw new NotFoundException('Role not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

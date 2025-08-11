@@ -58,6 +58,7 @@ export class User {
   @Prop() updatedAt: Date;
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt: Date;
+  @Prop() identificationNumber: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

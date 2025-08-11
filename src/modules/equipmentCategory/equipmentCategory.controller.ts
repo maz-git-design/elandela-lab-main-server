@@ -14,6 +14,7 @@ import {
 import { EquipmentCategoryService } from './equipmentCategory.service';
 import { EquipmentCategory } from './equipmentCategory.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateEquipmentCategoryDto } from './equipmentCategory.dto';
 
 @Controller('equipment-categories')
 export class EquipmentCategoryController {
@@ -26,9 +27,15 @@ export class EquipmentCategoryController {
   @SetMetadata('permissions', [
     { module: 'equipmentCategory', action: 'Create' },
   ])
-  create(@Body() data: Partial<EquipmentCategory>, @Request() req) {
+  create(
+    @Body() createEquipmentCategoryDto: CreateEquipmentCategoryDto,
+    @Request() req,
+  ) {
     const userId = req.user?._id || req.user?.id;
-    return this.equipmentCategoryService.create(data, userId);
+    return this.equipmentCategoryService.create(
+      createEquipmentCategoryDto,
+      userId,
+    );
   }
 
   @Get()

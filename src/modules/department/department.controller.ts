@@ -14,6 +14,7 @@ import {
 import { DepartmentService } from './department.service';
 import { Department } from './department.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateDepartmentDto } from './department.dto';
 
 @Controller('departments')
 export class DepartmentController {
@@ -22,9 +23,9 @@ export class DepartmentController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'department', action: 'Create' }])
-  create(@Body() data: Partial<Department>, @Request() req) {
+  create(@Body() createDepartmentDto: CreateDepartmentDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.departmentService.create(data, userId);
+    return this.departmentService.create(createDepartmentDto, userId);
   }
 
   @Get()

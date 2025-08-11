@@ -14,6 +14,8 @@ import {
 import { ModuleService } from './module.service';
 import { Module } from './module.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateModuleDto } from './module.dto';
+import { UpdateModuleDto } from './update-module.dto';
 
 @Controller('modules')
 export class ModuleController {
@@ -22,9 +24,9 @@ export class ModuleController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'module', action: 'Create' }])
-  create(@Body() data: Partial<Module>, @Request() req) {
+  create(@Body() createModuleDto: CreateModuleDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.moduleService.create(data, userId);
+    return this.moduleService.create(createModuleDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class ModuleController {
   @SetMetadata('permissions', [{ module: 'module', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Module>,
+    @Body() updateModuleDto: UpdateModuleDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.moduleService.update(id, data, userId);
+    return this.moduleService.update(id, updateModuleDto, userId);
   }
 
   @Patch(':id')

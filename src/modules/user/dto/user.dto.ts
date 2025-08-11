@@ -7,11 +7,13 @@ import {
   IsArray,
   IsDate,
   IsObject,
+  IsNotEmpty,
 } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class CreateUserDto {
   @IsString()
+  @IsNotEmpty()
   username: string;
 
   @IsString()
@@ -67,4 +69,8 @@ export class CreateUserDto {
 
   @IsOptional()
   cohortId?: Types.ObjectId;
+
+  @IsString()
+  @IsOptional()
+  identificationNumber?: string;
 }

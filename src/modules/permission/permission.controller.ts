@@ -14,6 +14,8 @@ import {
 import { PermissionService } from './permission.service';
 import { Permission } from './permission.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreatePermissionDto } from './permission.dto';
+import { UpdatePermissionDto } from './update-permission.dto';
 
 @Controller('permissions')
 export class PermissionController {
@@ -22,9 +24,9 @@ export class PermissionController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'permission', action: 'Create' }])
-  create(@Body() data: Partial<Permission>, @Request() req) {
+  create(@Body() createPermissionDto: CreatePermissionDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.permissionService.create(data, userId);
+    return this.permissionService.create(createPermissionDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class PermissionController {
   @SetMetadata('permissions', [{ module: 'permission', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Permission>,
+    @Body() updatePermissionDto: UpdatePermissionDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.permissionService.update(id, data, userId);
+    return this.permissionService.update(id, updatePermissionDto, userId);
   }
 
   @Patch(':id')

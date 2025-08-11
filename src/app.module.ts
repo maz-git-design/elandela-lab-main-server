@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './modules/user/user.module';
 import { RoleModule } from './modules/role/role.module';
-import { AuthModule } from './modules/auth-jwt/auth.module';
+
 import { RolesActionsGuard } from './modules/auth/roles-actions.guard';
 import { PermissionModule } from './modules/permission/permission.module';
 import { ModuleModule } from './modules/module/module.module';
@@ -17,6 +17,8 @@ import { ActivityModule } from './modules/activity/activity.module';
 import { CohortModule } from './modules/cohort/cohort.module';
 import { ReservationModule } from './modules/reservation/reservation.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [

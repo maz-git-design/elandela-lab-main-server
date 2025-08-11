@@ -2,6 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Department, DepartmentDocument } from './department.schema';
+import { CreateDepartmentDto } from './department.dto';
+import { UpdateDepartmentDto } from './update-department.dto';
+import { validateOrReject } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class DepartmentService {
@@ -11,11 +15,11 @@ export class DepartmentService {
   ) {}
 
   async create(
-    data: Partial<Department>,
+    createDepartmentDto: CreateDepartmentDto,
     userId?: string,
   ): Promise<Department> {
-    // Optionally use userId for audit/history
-    return this.departmentModel.create(data);
+    await validateOrReject(createDepartmentDto);
+    return this.departmentModel.create(createDepartmentDto);
   }
 
   async findAll(): Promise<Department[]> {
@@ -32,12 +36,39 @@ export class DepartmentService {
 
   async update(
     id: string,
+    updateDepartmentDto: UpdateDepartmentDto,
+    userId?: string,
+  ): Promise<Department> {
+    await validateOrReject(updateDepartmentDto);
+    return this.departmentModel
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDepartmentDto, {
+        new: true,
+      })
+      .exec();
+  }
+
+  async partialUpdate(
+    id: string,
     data: Partial<Department>,
     userId?: string,
   ): Promise<Department> {
-    return this.departmentModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, data, { new: true })
+    const dto = plainToInstance(CreateDepartmentDto, data);
+    await validateOrReject(dto as object);
+    const updateData: Partial<Department> = {};
+    for (const key in data) {
+      if (data[key] !== undefined) {
+        updateData[key] = data[key];
+      }
+    }
+    const updated = await this.departmentModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        { $set: updateData },
+        { new: true },
+      )
       .exec();
+    if (!updated) throw new NotFoundException('Department not found');
+    return updated;
   }
 
   async softDelete(id: string, userId?: string) {

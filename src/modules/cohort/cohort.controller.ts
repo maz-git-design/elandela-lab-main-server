@@ -14,6 +14,8 @@ import {
 import { CohortService } from './cohort.service';
 import { Cohort } from './cohort.schema';
 import { RolesActionsGuard } from '../auth/roles-actions.guard';
+import { CreateCohortDto } from './cohort.dto';
+import { UpdateCohortDto } from './update-cohort.dto';
 
 @Controller('cohorts')
 export class CohortController {
@@ -22,9 +24,9 @@ export class CohortController {
   @Post()
   @UseGuards(RolesActionsGuard)
   @SetMetadata('permissions', [{ module: 'cohort', action: 'Create' }])
-  create(@Body() data: Partial<Cohort>, @Request() req) {
+  create(@Body() createCohortDto: CreateCohortDto, @Request() req) {
     const userId = req.user?._id || req.user?.id;
-    return this.cohortService.create(data, userId);
+    return this.cohortService.create(createCohortDto, userId);
   }
 
   @Get()
@@ -46,11 +48,11 @@ export class CohortController {
   @SetMetadata('permissions', [{ module: 'cohort', action: 'Update' }])
   update(
     @Param('id') id: string,
-    @Body() data: Partial<Cohort>,
+    @Body() updateCohortDto: UpdateCohortDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
-    return this.cohortService.update(id, data, userId);
+    return this.cohortService.update(id, updateCohortDto, userId);
   }
 
   @Patch(':id')
