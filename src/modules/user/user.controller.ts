@@ -19,10 +19,7 @@ import { RolesActionsGuard } from '../auth/roles-actions.guard';
 import { CreateUserDto } from './dto/user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import {
-  Serialize,
-  SerializeInterceptor,
-} from 'src/interceptors/serialize.interceptor';
+import { Serialize } from 'src/interceptors/serialize.interceptor';
 
 @Controller('users')
 //@UseInterceptors(ClassSerializerInterceptor)
@@ -39,9 +36,10 @@ export class UserController {
   }
 
   @Get()
-  // @UseGuards(RolesActionsGuard)
-  // @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
+  @UseGuards(RolesActionsGuard)
+  @SetMetadata('permissions', [{ module: 'user', action: 'Read' }])
   //@UseInterceptors(ClassSerializerInterceptor)
+  @Serialize(UserResponseDto)
   findAll(@Body('filter') filter?: any) {
     return this.userService.findAll(filter);
   }

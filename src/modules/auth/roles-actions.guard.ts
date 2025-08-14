@@ -24,7 +24,7 @@ export class RolesActionsGuard implements CanActivate {
       ) || [];
     const req: Request = context.switchToHttp().getRequest();
     // Use type assertion to access user property
-    const user = (req as any).user;
+    const user = (req as any).session.userId;
     if (!user) throw new ForbiddenException('No user in session');
     // Collect user's permissions from roles and customPermissions
     const userPermissions = new Set<string>();

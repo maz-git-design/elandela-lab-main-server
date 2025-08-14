@@ -1,31 +1,20 @@
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { Model } from 'mongoose';
 import { User, UserDocument } from '../user/user.schema';
-import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/signup.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) readonly userModel: Model<UserDocument>,
-    readonly jwtService: JwtService,
   ) {}
-
-  async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await this.userModel
-      .findOne({ username, isDeleted: false })
-      .exec();
-    if (!user || !user.password) return null;
-    const isMatch = await bcrypt.compare(password, user.password);
-    return isMatch ? user : null;
-  }
 
   async validateSignup({
     email,
@@ -54,18 +43,6 @@ export class AuthService {
     }
   }
 
-  async generateLoginResponse(user: User | any) {
-    const payload = {
-      sub: user._id?.toString() || user.id?.toString(),
-      username: user.username,
-      roles: user.roles,
-    };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user,
-    };
-  }
-
   async signup(signupDto: SignupDto) {
     const { firstName, lastName, password, email } = signupDto;
     await this.validateSignup({ email, firstName, lastName });
@@ -77,17 +54,8 @@ export class AuthService {
       email,
       username: email || `${firstName}.${lastName}`,
     });
-    await user.save();
-    return this.generateLoginResponse(user.toObject());
-  }
-
-  async login(loginDto: LoginDto) {
-    const { username, password } = loginDto;
-    const user = await this.validateUser(username, password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-    // If user is a Mongoose document, convert to plain object
-    const plainUser = (user as any).toObject ? (user as any).toObject() : user;
-    return this.generateLoginResponse(plainUser);
+    const createdUser = await user.save();
+    return createdUser;
   }
 
   async resetPassword(username: string, newPassword: string) {
@@ -98,5 +66,27 @@ export class AuthService {
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
     return { message: 'Password reset successful' };
+  }
+
+  // Used by LocalStrategy for Passport local authentication
+  async validateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.userModel
+      .findOne({ username, isDeleted: false })
+      .exec();
+    if (!user || !user.password) return null;
+    const isMatch = await bcrypt.compare(password, user.password);
+    return isMatch ? user : null;
+  }
+
+  // This login method expects loginDto as before, and uses LocalAuthGuard for validation
+  async login(loginDto: LoginDto) {
+    // LocalAuthGuard should have validated the user and attached it to req.user in the controller
+    // Here, we find the user by username (for consistency with DTO usage)
+    const user = await this.userModel
+      .findOne({ username: loginDto.username, isDeleted: false })
+      .exec();
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    // const plainUser = (user as any).toObject ? (user as any).toObject() : user;
+    return user;
   }
 }
