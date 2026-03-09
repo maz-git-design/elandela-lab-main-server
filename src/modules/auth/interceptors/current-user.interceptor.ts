@@ -14,6 +14,7 @@ export class CurrentUserInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     // Access the user from the request object
     const { userId } = request.session || {};
+    console.log('CurrentUserInterceptor - userId from session:', userId);
 
     if (userId) {
       // Use the user ID to fetch the user from the database

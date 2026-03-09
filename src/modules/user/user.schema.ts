@@ -59,6 +59,8 @@ export class User {
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt: Date;
   @Prop() identificationNumber: string;
+  @Prop({ default: false })
+  mustSetNewPassword: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

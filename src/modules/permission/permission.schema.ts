@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 import * as mongooseDelete from 'mongoose-delete';
 
 export type PermissionDocument = Permission & Document;
@@ -8,7 +8,6 @@ export type PermissionDocument = Permission & Document;
 export class Permission {
   @Prop({ required: true }) name: string;
   @Prop() description: string;
-  @Prop({ type: Types.ObjectId, ref: 'Module' }) moduleId: Types.ObjectId;
   @Prop({ type: [String] }) actions: string[];
   @Prop() createdAt: Date;
   @Prop() updatedAt: Date;

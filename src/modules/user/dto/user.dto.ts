@@ -73,4 +73,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   identificationNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  mustSetNewPassword?: boolean;
 }

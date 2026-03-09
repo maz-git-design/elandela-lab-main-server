@@ -15,7 +15,7 @@ Content-Type: application/json
 
 {
   "username": "johndoe",
-  "password": "password123"
+  "password": "password1234"
 }
 
 ### Get Profile (session required)

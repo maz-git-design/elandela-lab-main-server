@@ -71,4 +71,15 @@ export class AuthController {
     session.userId = null;
     return { message: 'Logged out successfully' };
   }
+
+  @Post('set-password')
+  async setPassword(
+    @Request() request: Record<string, any>,
+    @Body('oldPassword') oldPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    const user = await request.currentUser;
+
+    return this.authService.setPassword(user, oldPassword, newPassword);
+  }
 }

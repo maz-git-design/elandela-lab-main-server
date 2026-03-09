@@ -53,6 +53,7 @@ export class AuthService {
       password: hashedPassword,
       email,
       username: email || `${firstName}.${lastName}`,
+      mustSetNewPassword: true, // Require user to set a new password after creation
     });
     const createdUser = await user.save();
     return createdUser;
@@ -66,6 +67,19 @@ export class AuthService {
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
     return { message: 'Password reset successful' };
+  }
+
+  async setPassword(user: any, oldPassword: string, newPassword: string) {
+    console.log('oldPassword:', oldPassword);
+    if (!user) throw new UnauthorizedException('User not found in session');
+    const dbUser = await this.userModel.findById(user._id).exec();
+    if (!dbUser) throw new UnauthorizedException('User not found');
+    const isMatch = await bcrypt.compare(oldPassword, dbUser.password);
+    if (!isMatch) throw new UnauthorizedException('Old password is incorrect');
+    dbUser.password = await bcrypt.hash(newPassword, 10);
+    dbUser.mustSetNewPassword = false;
+    await dbUser.save();
+    return dbUser.toObject ? dbUser.toObject() : dbUser;
   }
 
   // Used by LocalStrategy for Passport local authentication
@@ -86,7 +100,7 @@ export class AuthService {
       .findOne({ username: loginDto.username, isDeleted: false })
       .exec();
     if (!user) throw new UnauthorizedException('Invalid credentials');
-    // const plainUser = (user as any).toObject ? (user as any).toObject() : user;
+
     return user;
   }
 }

@@ -17,6 +17,15 @@ export class Attendance {
   @Prop() updatedAt: Date;
   @Prop({ default: false }) isDeleted: boolean;
   @Prop() deletedAt: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'Lab', required: true })
+  lab: Types.ObjectId;
+
+  @Prop({ type: Date })
+  checkIn: Date;
+
+  @Prop({ type: Date })
+  checkOut: Date;
 }
 
 export const AttendanceSchema = SchemaFactory.createForClass(Attendance);

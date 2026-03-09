@@ -22,4 +22,16 @@ export class CreateAttendanceDto {
   @IsOptional()
   @IsString()
   comments?: string;
+
+  @IsOptional()
+  @IsString()
+  lab?: string;
+
+  @IsOptional()
+  @IsDateString()
+  checkIn?: Date;
+
+  @IsOptional()
+  @IsDateString()
+  checkOut?: Date;
 }

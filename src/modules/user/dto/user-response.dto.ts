@@ -47,4 +47,7 @@ export class UserResponseDto extends CreateUserDto {
 
   @Expose()
   identificationNumber: string;
+
+  @Expose()
+  mustSetNewPassword: boolean;
 }

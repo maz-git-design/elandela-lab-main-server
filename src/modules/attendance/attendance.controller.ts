@@ -60,7 +60,7 @@ export class AttendanceController {
   @SetMetadata('permissions', [{ module: 'attendance', action: 'Update' }])
   partialUpdate(
     @Param('id') id: string,
-    @Body() data: Partial<Attendance>,
+    @Body() data: UpdateAttendanceDto,
     @Request() req,
   ) {
     const userId = req.user?._id || req.user?.id;
